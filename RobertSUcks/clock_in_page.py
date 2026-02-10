@@ -10,7 +10,7 @@ DB_CONFIG = {
     "port": 3306,
     "user": "root",
     "password": "Barker123!",
-    "database": "CSCI4250_StudentTracker",
+    "database": "NutriLog",
 }
 
 
