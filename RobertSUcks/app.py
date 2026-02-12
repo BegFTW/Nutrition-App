@@ -10,13 +10,14 @@ app.secret_key = "dev"
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(home_bp)
-app.register_blueprint(clock_bp)
-app.register_blueprint(maps_bp)
+app.register_blueprint(clock_bp) #do we need this?
+app.register_blueprint(maps_bp) # do we need this either? useful for references but not much else
 app.register_blueprint(food_bp)
 
 @app.route("/")
 def index():
     return redirect(url_for("auth.login"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
