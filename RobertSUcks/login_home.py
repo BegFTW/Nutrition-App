@@ -20,11 +20,6 @@ DB_CONFIG = {
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-@auth_bp.route("/logout", methods=["POST"])
-def logout():
-    session.clear()  # clears all session data
-    return redirect(url_for("auth.login"))
-
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     message = None
@@ -116,32 +111,18 @@ def login():
             conn = mysql.connector.connect(**DB_CONFIG)
             cur = conn.cursor(dictionary=True)
 
-<<<<<<< HEAD
             # Check Users table
-=======
-            # Check User
->>>>>>> 5694bf93d16bbd88edb40ad9a018f118744170a5
             cur.execute(
                 "SELECT * FROM Users WHERE user_id = %s AND pass_key = %s",
                 (entered_id, entered_pass),
             )
             user = cur.fetchone()
-<<<<<<< HEAD
             conn.close()
 
             if user:
                 session["user_id"] = user["user_id"]
                 session["first_name"] = user["first_name"]
                 session["last_name"] = user["last_name"]
-=======
-
-
-            conn.close()
-
-            if user:
-                session["user_id"] = entered_id
-                session["role"] = "user"
->>>>>>> 5694bf93d16bbd88edb40ad9a018f118744170a5
                 return redirect(url_for("home.home"))
             #room for different user types
             else:
@@ -176,7 +157,6 @@ def login():
             <div class="error-msg">{{ error }}</div>
         {% endif %}
 
-<<<<<<< HEAD
         <form method="post" class="auth-form">
             <input type="text" name="user_id" placeholder="User ID" required>
             <input type="password" name="pass_key" placeholder="Password" required>
@@ -189,66 +169,11 @@ def login():
 
     </div>
 </div>
-=======
-    if request.method == "POST":
-        user_id = request.form.get("user_id", "").strip()
-        pass_key = request.form.get("pass_key", "").strip()
-        first_name = request.form.get("first_name", "").strip()
-        last_name = request.form.get("last_name", "").strip()
-
-        if not all([user_id, pass_key, first_name, last_name]):
-            message = "All fields are required."
-        else:
-            try:
-                conn = mysql.connector.connect(**DB_CONFIG)
-                cur = conn.cursor()
-                cur.execute(
-                    "INSERT INTO Users (user_id, pass_key, first_name, last_name) VALUES (%s, %s, %s, %s)",
-                    (user_id, pass_key, first_name, last_name),
-                )
-                conn.commit()
-                conn.close()
-                return redirect(url_for("auth.login"))
-            except mysql.connector.Error as e:
-                message = f"Database error: {e}"
->>>>>>> 5694bf93d16bbd88edb40ad9a018f118744170a5
 
 </body>
 </html>
 """, error=error)
 
-<<<<<<< HEAD
-=======
-            <form method="post" align="center" style="margin-top: 20px;">
-                <h2>Create Account</h2>
-                {% if message %}
-                    <div style="color:red;">{{ message }}</div>
-                {% endif %}
-                <label for="user_id">User ID</label>
-                <input type="text" name="user_id" required><br>
-                <label for="pass_key">Pass Key</label>
-                <input type="password" name="pass_key" required><br>
-                <label for="first_name">First Name</label>
-                <input type="text" name="first_name" required><br>
-                <label for="last_name">Last Name</label>
-                <input type="text" name="last_name" required><br>
-                <label for="role">Role</label>
-                <select name="role" required>
-                    <option value="">Select One</option>
-                    <option value="student">Student</option>
-                    <option value="instructor">Instructor</option>
-                </select><br><br>
-                <button type="submit">Create Account</button>
-            </form>
-
-            <div align="center" style="margin-top:20px;">
-                <a href="{{ url_for('auth.login') }}"><button type="button">Back to Login</button></a>
-            </div>
-        </body>
-        </html>
-        """,
-        message=message,
-    )
 
 
 @auth_bp.route("/forgot", methods=["GET", "POST"])
@@ -330,4 +255,3 @@ def forgot_password():
 def logout():
     session.clear()
     return redirect(url_for("auth.login"))
->>>>>>> 5694bf93d16bbd88edb40ad9a018f118744170a5
