@@ -48,6 +48,7 @@ def login():
                 session["user_id"] = entered_id
                 session["role"] = "user"
                 return redirect(url_for("home.home"))
+            #room for different user types
             else:
                 error = "Invalid ID or Pass Key. Please try again."
         except mysql.connector.Error as e:
@@ -185,18 +186,19 @@ def forgot_password():
             conn = mysql.connector.connect(**DB_CONFIG)
             cur = conn.cursor(dictionary=True)
 
-            cur.execute("SELECT pass_key FROM Students WHERE student_id = %s", (user_id,))
-            student = cur.fetchone()
+            cur.execute("SELECT pass_key FROM Users WHERE user_id = %s", (user_id,))
+            user = cur.fetchone()
 
-            instructor = None
-            if not student:
+            trainer = None
+            if not user:
+                #replace with trainer if we have? trainer class?
                 cur.execute("SELECT pass_key FROM Instructors WHERE instructor_id = %s", (user_id,))
                 instructor = cur.fetchone()
 
             conn.close()
 
-            if student:
-                password = student["pass_key"]
+            if user:
+                password = user["pass_key"]
             elif instructor:
                 password = instructor["pass_key"]
             else:

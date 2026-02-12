@@ -24,7 +24,7 @@ def home():
         <li><a href="{clock_url}">Clock In/Out</a></li>
     """
 
-    if role == "student":
+    if role == "user":
         # User-specific buttons
         nothing = 0
     else:
