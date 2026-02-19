@@ -1,5 +1,4 @@
 import mysql.connector
-from security import encrypt_password
 
 def createDatabaseFromFile():
   # Establish a connection to the MySQL server
@@ -13,7 +12,7 @@ def createDatabaseFromFile():
   conn = mysql.connector.connect(**DB_CONFIG)
 
   # Create a cursor to execute queries
-  cursor = conn.cursor(buffered=True)
+  cursor = conn.cursor()
 
   # Open and read the SQL file
   with open('NutrilogDB.sql', 'r') as file:
@@ -34,15 +33,6 @@ def createDatabaseFromFile():
 
   # Close the cursor and the database connection
   cursor.close()
-  
-  cursor = conn.cursor()
-  hashed_pw = encrypt_password("2222")
-  old_password = "2222"
-  
-  cursor.execute(
-    "UPDATE users SET pass_key = %s WHERE pass_key = %s",
-    (hashed_pw, old_password,)
-  )
   conn.close()
 
 createDatabaseFromFile()
