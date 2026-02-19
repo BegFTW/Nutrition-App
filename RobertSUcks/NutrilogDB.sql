@@ -9,7 +9,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE Users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
-    pass_key   VARCHAR(50) NOT NULL,
+    pass_key   VARCHAR(256) NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name  VARCHAR(50) NOT NULL
 );
