@@ -121,7 +121,6 @@ def login():
             db_password = cur_pw.fetchone()
             db_password = db_password[0]
             db_password = db_password.encode('utf-8')
-            entered_pass = entered_pass.encode('utf-8')
             print(entered_pass)
             
             cur_pw.close()
@@ -151,8 +150,11 @@ def login():
 
         except mysql.connector.Error as e:
             error = f"Database error: {e}"
+        #catching error for incorrect hashes, which is just incorrect password
         except passlib.exc.UnknownHashError as e:
-            error = f"Password error; please try again"
+            error = f"Password Error: Please try again!"
+        except Exception as e:
+            error = f"An unknown error occurred: {e}"
 
     return render_template_string("""
 <!DOCTYPE html>

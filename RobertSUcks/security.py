@@ -19,6 +19,3 @@ def encrypt_password(password):
 #basically just comparing the password plaintext the user enters with the hash we have stored
 def decrypt_password(password, hashed):
   return pwd_context.verify(password, hashed)
-  
-  
-print(encrypt_password("2222"))
