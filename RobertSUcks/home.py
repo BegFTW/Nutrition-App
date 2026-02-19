@@ -1,74 +1,71 @@
-from flask import Blueprint, redirect, url_for, session
+from flask import Blueprint, session, redirect, url_for, render_template_string
 
 home_bp = Blueprint("home", __name__, url_prefix="/home")
 
-
 @home_bp.route("/")
 def home():
-    # Require login
     if not session.get("user_id"):
         return redirect(url_for("auth.login"))
 
     user_id = session.get("user_id")
-    role = session.get("role")
+    first_name = session.get("first_name", "User")
+    last_name = session.get("last_name", "")
 
     logout_url = url_for("auth.logout")
     maps_url = url_for("maps.index")
     food_url = url_for("food.index")
     clock_url = url_for("clock.index")
 
-    # Base nav: Maps is visible to everyone
-    nav_buttons = f"""
-        <li><a href="{maps_url}">Maps</a></li>
-        <li><a href="{food_url}">Add Food</a></li>
-        <li><a href="{clock_url}">Clock In/Out</a></li>
-    """
-
-    if role == "user":
-        # User-specific buttons
-        nothing = 0
-    else:
-        # Trainer-specific "Students" button
-        nothing = 1
-
-    nav_buttons += f"""
-        <li>
-            <form method="post" action="{logout_url}" style="display:inline;">
-                <button type="submit">Logout</button>
-            </form>
-        </li>
-    """
-
-    return f"""
+    return render_template_string("""
     <!DOCTYPE html>
     <html lang="en">
     <head>
-        <title>Home</title>
-        <link rel="stylesheet" href="/static/styles.css">
+        <title>NutriLog | Dashboard</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body class="home">
-
-        <!-- Nutrilog header with icon and banner -->
-        <div class="hero-section">
-            <div class="hero-image">
-                <img src="/static/nutrilog_icon.png" alt="NutriLog Icon">
+    <body>
+        <nav class="navbar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='nutrilog_icon.png') }}" alt="NutriLog">
+                <span>NutriLog</span>
             </div>
-        </div>
-
-        <!-- ✅ Moved the blue nav bar BELOW the icon -->
-        <nav>
             <ul class="menu">
-                {nav_buttons}
+                <li><a href="{{ maps_url }}">Maps</a></li>
+                <li><a href="{{ food_url }}">Add Food</a></li>
+                <li><a href="{{ clock_url }}">Clock In/Out</a></li>
+                <li>
+                    <form method="post" action="{{ logout_url }}" style="display:inline;">
+                        <button class="logout-btn" type="submit">Logout</button>
+                    </form>
+                </li>
             </ul>
         </nav>
 
-        <main>
-            <section class="home" style="text-align:center;">
-                <h1>Welcome to NutriLog!</h1>
-                <h2>Get healthy or go back to playing league you fucking weeb!!</h2>
-                <p>You are logged in as <b>{role}</b>: {user_id}</p>
-            </section>
+        <header class="hero">
+            <h1>Welcome back, {{ first_name }}!</h1>
+            <p>Your personalized nutrition dashboard</p>
+        </header>
+
+        <main class="container">
+            <div class="card">
+                <h2>Dashboard Overview</h2>
+                <p>You are logged in as:</p>
+                <div class="user-badge">
+                    <strong>User ID:</strong> {{ user_id }}<br>
+                    <strong>Name:</strong> {{ first_name }} {{ last_name }}
+                </div>
+            </div>
         </main>
+
     </body>
     </html>
-    """
+    """,
+    user_id=user_id,
+    first_name=first_name,
+    last_name=last_name,
+    logout_url=logout_url,
+    maps_url=maps_url,
+    food_url=food_url,
+    clock_url=clock_url
+    )

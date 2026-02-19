@@ -16,7 +16,7 @@ def createDatabaseFromFile():
   cursor = conn.cursor(buffered=True)
 
   # Open and read the SQL file
-  with open('RobertSUcks/NutrilogDB.sql', 'r') as file:
+  with open('NutrilogDB.sql', 'r') as file:
       sql_queries = file.read()
 
   # Split the SQL file content into individual queries
