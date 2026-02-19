@@ -7,6 +7,7 @@ from flask import (
     session,
 )
 import mysql.connector
+from security import encrypt_password, decrypt_password
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -29,22 +30,34 @@ def login():
     if request.method == "POST":
         entered_id = request.form.get("user_id", "").strip()
         entered_pass = request.form.get("pass_key", "").strip()
-
+    
         try:
             conn = mysql.connector.connect(**DB_CONFIG)
-            cur = conn.cursor(dictionary=True)
+            cur1 = conn.cursor()
+            
+            #grab the password to compare
+            cur1.execute("SELECT pass_key FROM Users WHERE user_id = %s", (entered_id,))
+            db_password = cur1.fetchone()
+            db_password = db_password[0]
+            db_password = db_password.encode('utf-8')
+            entered_pass = entered_pass.encode('utf-8')
+            
+            cur1.close()
+            
+            if decrypt_password(entered_pass, db_password):
+                cur2 = conn.cursor(dictionary=True)
+                # Check User
+                cur2.execute(
+                    "SELECT * FROM Users WHERE user_id = %s",
+                    (entered_id,)
+                )
+                user = cur2.fetchone()
 
-            # Check User
-            cur.execute(
-                "SELECT * FROM Users WHERE user_id = %s AND pass_key = %s",
-                (entered_id, entered_pass),
-            )
-            user = cur.fetchone()
-
-
+            cur2.close()
             conn.close()
 
             if user:
+            
                 session["user_id"] = entered_id
                 session["role"] = "user"
                 return redirect(url_for("home.home"))
@@ -105,6 +118,7 @@ def register():
     if request.method == "POST":
         user_id = request.form.get("user_id", "").strip()
         pass_key = request.form.get("pass_key", "").strip()
+        pass_key = encrypt_password(pass_key)
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
 

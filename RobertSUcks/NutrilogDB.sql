@@ -9,7 +9,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE Users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
-    pass_key   VARCHAR(50) NOT NULL,
+    pass_key   VARCHAR(256) NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name  VARCHAR(50) NOT NULL
 );
@@ -39,7 +39,7 @@ CREATE TABLE Workouts (
 
 -- Demo user (keep your 2222)
 INSERT INTO Users (user_id, pass_key, first_name, last_name)
-VALUES (2222, '2222', 'Grace', 'Jonas');
+VALUES (2222, '$pbkdf2-sha256$30000$D2GM0Vrr/R9j7F3LOae0lg$d2FP4QKZ5EkAGkwH9o2i5IYr1C4pGBvfjia1bFdEK9Y', 'Grace', 'Jonas');
 
 -- Verify
 SELECT DATABASE();
