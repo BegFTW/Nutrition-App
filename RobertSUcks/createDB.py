@@ -42,7 +42,7 @@ def createDatabaseFromFile():
   fix_old_user = conn.cursor()
   #then executing a statement to update that old password with our encryption
   fix_old_user.execute(
-    "UPDATE users SET pass_key = %s WHERE pass_key = %s",
+    "UPDATE Users SET pass_key = %s WHERE pass_key = %s",
     (secure_pass, old_pass,)
   )
   #close cursor
