@@ -249,7 +249,6 @@ def _fmt_num(x, digits=1):
     if x is None:
         return ""
     try:
-        # prefer 0 decimal for calories & sodium if large, otherwise 1 digit
         return f"{float(x):.{digits}f}"
     except Exception:
         return ""
@@ -476,7 +475,6 @@ def _fetch_saved_meals_for_user(user_id: int, limit: int = 25):
 
             # If older saved rows don't include nutrients, compute them on display
             for it in norm_items:
-                # only compute if at least one field missing
                 if any(it.get(f) is None for f in NUTRI_FIELDS):
                     _apply_nutrition_to_item(it)
 
@@ -555,18 +553,15 @@ def index():
         return redirect(url_for("auth.login"))
 
     meal = _normalize_meal_list(session.get("meal_items", []))
-    # compute nutrition for items that don't have it yet
     for it in meal:
         if it.get("grams") is not None and any(it.get(f) is None for f in NUTRI_FIELDS):
             _apply_nutrition_to_item(it)
-
     session["meal_items"] = meal
 
     search_query = session.get("last_search_query", "")
     current_image_url = session.get("current_image_url", None)
     current_preds = session.get("current_preds", None)
     history = _session_get_pred_history()
-    nav_buttons = _build_nav_buttons()
 
     saved_meals = []
     try:
@@ -575,9 +570,13 @@ def index():
     except Exception:
         saved_meals = []
 
+    # Nav URLs (your template references these)
+    maps_url = url_for("maps.index")
+    food_url = url_for("food.index")
+    clock_url = url_for("clock.index")
+
     return render_template_string(
         PAGE_HTML,
-        nav_buttons=nav_buttons,
         meal=meal,
         search_query=search_query,
         class_names=class_names[:5000],
@@ -586,6 +585,9 @@ def index():
         history=history,
         saved_meals=saved_meals,
         fmt_num=_fmt_num,
+        maps_url=maps_url,
+        food_url=food_url,
+        clock_url=clock_url,
     )
 
 @food_bp.route("/predict", methods=["POST"])
@@ -815,6 +817,7 @@ def save_meal():
         except Exception:
             pass
 
+
 PAGE_HTML = r"""
 <!doctype html>
 <html>
@@ -925,7 +928,7 @@ PAGE_HTML = r"""
             </form>
         </li>
     </ul>
-</nav>
+  </nav>
 
   {% if session.get("flash_msg") %}
     <div class="card">
@@ -1129,7 +1132,14 @@ PAGE_HTML = r"""
   </div>
 
   <div class="card">
-    <h3>Saved Meals (from database)</h3>
+    <h3 style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span>Saved Meals (from database)</span>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button type="button" id="shareSavedBtn">Share Saved Meals (Copy + Open Outlook)</button>
+        <span class="muted" id="shareSavedStatus"></span>
+      </div>
+    </h3>
 
     {% if saved_meals and saved_meals|length > 0 %}
       <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
@@ -1176,6 +1186,11 @@ PAGE_HTML = r"""
     {% endif %}
   </div>
 
+  <!-- Expose saved meals to JS for the Share button -->
+  <script>
+    window.SAVED_MEALS = {{ saved_meals|tojson }};
+  </script>
+
   <script>
     const input = document.getElementById("imageInput");
     const mainImg = document.getElementById("mainImg");
@@ -1184,7 +1199,137 @@ PAGE_HTML = r"""
     const predictForm = document.getElementById("predictForm");
     const predArea = document.getElementById("predArea");
 
+    const shareSavedBtn = document.getElementById("shareSavedBtn");
+    const shareSavedStatus = document.getElementById("shareSavedStatus");
+
     let lastObjectUrl = null;
+
+    function fmtNumJS(x, digits=1) {
+      if (x === null || x === undefined || x === "") return "";
+      const n = Number(x);
+      if (Number.isNaN(n)) return "";
+      return n.toFixed(digits);
+    }
+
+    function savedMealsToShareText(savedMeals) {
+      if (!Array.isArray(savedMeals) || savedMeals.length === 0) {
+        return "No saved meals found.\n";
+      }
+
+      let out = "";
+      savedMeals.forEach((m, mealIdx) => {
+        const mealNum = mealIdx + 1;
+        const createdAt = (m && m.created_at) ? String(m.created_at) : "";
+        const logId = (m && m.log_id != null) ? String(m.log_id) : "";
+
+        out += `Meal ${mealNum}:\n`;
+        if (createdAt || logId) {
+          out += `  Date/Time: ${createdAt}${(createdAt && logId) ? " — " : ""}${logId ? ("log_id=" + logId) : ""}\n`;
+        }
+
+        const items = (m && Array.isArray(m.meal_items)) ? m.meal_items : [];
+        if (items.length === 0) {
+          out += "  (No items)\n\n";
+          return;
+        }
+
+        items.forEach((it, itemIdx) => {
+          const label = (it && it.label) ? String(it.label) : `Item ${itemIdx+1}`;
+          const grams = (it && it.grams != null) ? `${it.grams} g` : "grams: (not set)";
+
+          const calories = (it && it.calories != null) ? fmtNumJS(it.calories, 0) : "";
+          const protein  = (it && it.protein != null) ? fmtNumJS(it.protein, 1) : "";
+          const carbs    = (it && it.carbohydrates != null) ? fmtNumJS(it.carbohydrates, 1) : "";
+          const fats     = (it && it.fats != null) ? fmtNumJS(it.fats, 1) : "";
+          const fiber    = (it && it.fiber != null) ? fmtNumJS(it.fiber, 1) : "";
+          const sugars   = (it && it.sugars != null) ? fmtNumJS(it.sugars, 1) : "";
+          const sodium   = (it && it.sodium != null) ? fmtNumJS(it.sodium, 0) : "";
+
+          out += `  Item ${itemIdx+1}: ${label} — ${grams}\n`;
+
+          const lines = [];
+          if (calories !== "") lines.push(`Calories: ${calories}`);
+          if (protein !== "")  lines.push(`Protein (g): ${protein}`);
+          if (carbs !== "")    lines.push(`Carbs (g): ${carbs}`);
+          if (fats !== "")     lines.push(`Fats (g): ${fats}`);
+          if (fiber !== "")    lines.push(`Fiber (g): ${fiber}`);
+          if (sugars !== "")   lines.push(`Sugars (g): ${sugars}`);
+          if (sodium !== "")   lines.push(`Sodium (mg): ${sodium}`);
+
+          if (lines.length > 0) {
+            for (const l of lines) out += `    - ${l}\n`;
+          } else {
+            out += `    - (No nutrition match)\n`;
+          }
+        });
+
+        out += "\n";
+      });
+
+      return out;
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "absolute";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          return ok;
+        } catch (e2) {
+          return false;
+        }
+      }
+    }
+
+function openOutlookWithBody(bodyText) {
+  // Opens the user's default mail app (often Outlook on Windows) via mailto:
+  // Note: mailto length limits exist; if you have tons of saved meals, it may truncate.
+  const subject = encodeURIComponent("NutriLog Saved Meals");
+  const body = encodeURIComponent(bodyText);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+    let shareSavedStatusTimer = null;
+
+    if (shareSavedBtn) {
+    shareSavedBtn.addEventListener("click", async () => {
+        const savedMeals = window.SAVED_MEALS || [];
+        const text = savedMealsToShareText(savedMeals);
+
+        // Show status
+        if (shareSavedStatus) shareSavedStatus.textContent = "Copying...";
+
+        const ok = await copyText(text);
+
+        // Update status
+        if (shareSavedStatus) {
+        shareSavedStatus.textContent = ok
+            ? "Copied! Opening Outlook compose..."
+            : "Could not auto-copy (browser blocked it). Opening Outlook anyway...";
+
+        // clear previous timer (if they click twice quickly)
+        if (shareSavedStatusTimer) clearTimeout(shareSavedStatusTimer);
+
+        // Clear after 5 seconds
+        shareSavedStatusTimer = setTimeout(() => {
+            if (shareSavedStatus) shareSavedStatus.textContent = "";
+            shareSavedStatusTimer = null;
+        }, 5000);
+        }
+
+        openOutlookWithBody(text);
+    });
+    }
 
     function renderPredictions(preds) {
       if (!preds || preds.length === 0) {
