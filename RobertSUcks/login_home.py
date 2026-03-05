@@ -12,6 +12,7 @@ import passlib
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+#setting up config for DB; we should probably move this to another space so our root password isn't open access
 DB_CONFIG = {
     "host": "localhost",
     "port": 3306,
@@ -22,17 +23,21 @@ DB_CONFIG = {
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+#register endpoint
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     message = None
 
     if request.method == "POST":
+        #gets user attributes from the form
         user_id = request.form.get("user_id", "").strip()
         pass_key = request.form.get("pass_key", "").strip()
+        #encrypts the password on the way
         encrypted_passkey = encrypt_password(pass_key)
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
 
+        #checks for all attributes required for the user creation
         if not all([pass_key, first_name, last_name]):
             message = "All fields are required."
         else:
@@ -45,10 +50,10 @@ def register():
                     "INSERT INTO Users (user_id, pass_key, first_name, last_name) VALUES (%s, %s, %s, %s)",
                     (user_id, encrypted_passkey, first_name, last_name),
                 )
-
+                #commits, then closes the cursor
                 conn.commit()
                 conn.close()
-
+                #then redirects 
                 return redirect(url_for("auth.login"))
 
             except mysql.connector.Error as e:
@@ -104,11 +109,12 @@ def register():
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     error = None
-
+    #if there's already a user logged in, sends you home
     if session.get("user_id"):
         return redirect(url_for("home.home"))
 
     if request.method == "POST":
+        #grabs password and user id
         entered_id = request.form.get("user_id", "").strip()
         entered_pass = request.form.get("pass_key", "").strip()
         
@@ -117,18 +123,20 @@ def login():
             cur_pw = conn.cursor() 
             
             cur_pw.execute("SELECT pass_key FROM Users WHERE user_id = %s", (entered_id,))
-            
+
             db_password = cur_pw.fetchone()
             db_password = db_password[0]
             db_password = db_password.encode('utf-8')
-            print(entered_pass)
+            #grabs hashed password from the database, then converts it into utf-8 plaintext
             
             cur_pw.close()
             
-            if decrypt_password(entered_pass, db_password):
+            #verifies that the password entered and the hashed password in the database match up
+            if decrypt_password(entered_pass, db_password): #if they do, it logs you in
                 
                 cur = conn.cursor(dictionary=True, buffered=True)
                 
+                #this line could be deleted
                 cur.execute("SELECT pass_key FROM Users WHERE user_id = %s", (entered_id,))
                 
                 # Check Users table
@@ -140,6 +148,7 @@ def login():
             conn.close()
 
             if user:
+                #if there is a user as a result of all that, sets session variables to customize experience per user, then redirects them to home
                 session["user_id"] = user["user_id"]
                 session["first_name"] = user["first_name"]
                 session["last_name"] = user["last_name"]
@@ -199,13 +208,14 @@ def login():
 """, error=error)
 
 
-
+#needs to be updated with password hashing. 
 @auth_bp.route("/forgot", methods=["GET", "POST"])
 def forgot_password():
     message = None
     password = None
 
     if request.method == "POST":
+        #grabs user id
         user_id = request.form.get("user_id", "").strip()
 
         try:
@@ -215,18 +225,12 @@ def forgot_password():
             cur.execute("SELECT pass_key FROM Users WHERE user_id = %s", (user_id,))
             user = cur.fetchone()
 
-            trainer = None
-            if not user:
-                #replace with trainer if we have? trainer class?
-                cur.execute("SELECT pass_key FROM Instructors WHERE instructor_id = %s", (user_id,))
-                instructor = cur.fetchone()
+            
 
             conn.close()
 
             if user:
                 password = user["pass_key"]
-            elif instructor:
-                password = instructor["pass_key"]
             else:
                 message = "User not found."
 

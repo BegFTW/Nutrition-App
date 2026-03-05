@@ -1,2 +1,5 @@
 *.pyc
 .env
+*.jpg
+*.png
+*.webp
