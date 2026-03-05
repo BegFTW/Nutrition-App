@@ -1,5 +1,4 @@
 name: basic-actions
-run-name: ${{ github.actor }} just pushed.
 on: [push]
 jobs:
   check_mysql:
