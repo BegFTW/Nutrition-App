@@ -1,0 +1,1 @@
+Note about database diagram: this does not include the food models, as we do not hold them in our databse. The model is trained off of the data in the CSV, and data about food is looked up using an accompanying nutrition CSV. 
