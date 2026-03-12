@@ -1,5 +1,3 @@
 *.pyc
 .env
-*.jpg
-*.webp
-*.gif
+RobertSUcks/static/food_uploads/*
