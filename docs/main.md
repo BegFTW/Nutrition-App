@@ -1,1 +1,3 @@
 Note about database diagram: this does not include the food models, as we do not hold them in our databse. The model is trained off of the data in the CSV, and data about food is looked up using an accompanying nutrition CSV. 
+Our database design would be identical to any UML design, as we hardly use objects (data is stored per session)
+Our detailed design diagram displays application flows. what functions need to be performed to get to a given state, what requirements need to be met for certain parts of the app to display, etc. stars denote dfferent pages/views of the app, otherwise it's a button or a check that happens behind the scenes. 
