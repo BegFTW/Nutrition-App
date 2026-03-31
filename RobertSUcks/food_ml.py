@@ -1256,6 +1256,25 @@ PAGE_HTML = r"""
                           </div>
                         </div>
                       {% endfor %}
+
+                      {# --- sugar total for this meal --- #}
+                      {% set ns = namespace(total_sugar=0, has_sugar=false) %}
+                      {% for it in m.meal_items %}
+                        {% if it.sugars is not none %}
+                          {% set ns.total_sugar = ns.total_sugar + it.sugars %}
+                          {% set ns.has_sugar = true %}
+                        {% endif %}
+                      {% endfor %}
+                      {% if ns.has_sugar %}
+                        <div style="margin-top:8px; padding:8px 10px; border-radius:10px;
+                          background:{{ '#fff5f5' if ns.total_sugar > 50 else ('#fff8f0' if ns.total_sugar > 37.5 else '#f9f9f9') }};
+                          border:1px solid {{ '#f44336' if ns.total_sugar > 50 else ('#ff9800' if ns.total_sugar > 37.5 else '#eee') }};
+                          font-size:14px;">
+                          <b>Meal sugar total:</b> {{ "%.1f"|format(ns.total_sugar) }} g
+                          {% if ns.total_sugar > 50 %} over daily limit{% endif %}
+                        </div>
+                      {% endif %}
+
                     </div>
                   {% else %}
                     <div class="muted" style="margin-top:8px;">(No items)</div>

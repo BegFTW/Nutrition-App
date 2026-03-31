@@ -335,6 +335,18 @@ PAGE_HTML = r"""
     /* Flash message */
     .flash { color:#666; }
 
+    /* Sugar tracker */
+    .sugar-card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:16px auto; background:#fff; }
+    .sugar-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+    .sugar-title { font-weight:700; font-size:16px; }
+    .sugar-amount { font-size:22px; font-weight:800; }
+    .sugar-limit { color:#999; font-size:14px; }
+    .sugar-bar-bg { background:#f0f0f0; border-radius:999px; height:14px; overflow:hidden; margin-bottom:8px; }
+    .sugar-bar-fill { height:100%; border-radius:999px; transition:width 0.4s ease; background:#4caf50; }
+    .sugar-bar-fill.warn { background:#ff9800; }
+    .sugar-bar-fill.over { background:#f44336; }
+    .sugar-note { font-size:13px; color:#888; }
+
   </style>
 </head>
 
@@ -397,6 +409,20 @@ PAGE_HTML = r"""
         </div>
       </div>
 
+      <div id="sugarTrackerCard" class="sugar-card" style="display:none;">
+        <div class="sugar-header">
+          <span class="sugar-title"> Today's Sugar</span>
+          <span>
+            <span class="sugar-amount" id="sugarToday">0</span>
+            <span class="sugar-limit"> g &nbsp;/&nbsp; 50 g recommended</span>
+          </span>
+        </div>
+        <div class="sugar-bar-bg">
+          <div class="sugar-bar-fill" id="sugarBar" style="width:0%;"></div>
+        </div>
+        <div class="sugar-note" id="sugarNote">No meals logged today yet.</div>
+      </div>
+      
       <div class="calendar-wrap">
         <div class="cal-head">
           <div class="cal-title">{{ month_name }} {{ year }}</div>
@@ -465,6 +491,49 @@ PAGE_HTML = r"""
  <script>
   // meals_by_day from Flask
   const MEALS_BY_DAY = {{ meals_by_day|tojson }};
+
+  // --- Sugar tracker ---
+  const SUGAR_LIMIT_G = 50;
+  const TODAY_KEY = "{{ today_key }}";
+
+  (function initSugarTracker() {
+    const todayMeals = MEALS_BY_DAY[TODAY_KEY] || [];
+    if (todayMeals.length === 0) return;
+
+    let totalSugar = 0;
+    let hasData = false;
+    for (const meal of todayMeals) {
+      for (const it of (meal.meal_items || [])) {
+        if (it.sugars != null) {
+          totalSugar += Number(it.sugars) || 0;
+          hasData = true;
+        }
+      }
+    }
+
+    if (!hasData) return;
+
+    const card  = document.getElementById("sugarTrackerCard");
+    const label = document.getElementById("sugarToday");
+    const bar   = document.getElementById("sugarBar");
+    const note  = document.getElementById("sugarNote");
+
+    card.style.display = "";
+    label.textContent = totalSugar.toFixed(1);
+
+    const pct = Math.min((totalSugar / SUGAR_LIMIT_G) * 100, 100);
+    bar.style.width = pct + "%";
+
+    if (totalSugar > SUGAR_LIMIT_G) {
+      bar.classList.add("over");
+      note.textContent = ` ${(totalSugar - SUGAR_LIMIT_G).toFixed(1)} g over the daily recommended limit.`;
+    } else if (totalSugar > SUGAR_LIMIT_G * 0.75) {
+      bar.classList.add("warn");
+      note.textContent = `Getting close to the daily recommended limit (${SUGAR_LIMIT_G} g).`;
+    } else {
+      note.textContent = `${(SUGAR_LIMIT_G - totalSugar).toFixed(1)} g remaining for today.`;
+    }
+  })();
 
   const backdrop = document.getElementById("modalBackdrop");
   const modalTitle = document.getElementById("modalTitle");
@@ -604,7 +673,9 @@ PAGE_HTML = r"""
           <div><b>Carbs (g)</b> ${fmtNum(totals.carbohydrates, 1)}</div>
           <div><b>Fats (g)</b> ${fmtNum(totals.fats, 1)}</div>
           <div><b>Fiber (g)</b> ${fmtNum(totals.fiber, 1)}</div>
-          <div><b>Sugars (g)</b> ${fmtNum(totals.sugars, 1)}</div>
+          <div style="border-color:${totals.sugars > 50 ? '#f44336' : totals.sugars > 37.5 ? '#ff9800' : '#eee'}; background:${totals.sugars > 50 ? '#fff5f5' : totals.sugars > 37.5 ? '#fff8f0' : '#fafafa'};">
+            <b> Sugars (g)</b> ${fmtNum(totals.sugars, 1)}${totals.sugars > 50 ? ' ' : ''}
+          </div>
           <div><b>Sodium (mg)</b> ${Math.round(totals.sodium)}</div>
         </div>
       </div>
