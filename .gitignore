@@ -5,3 +5,4 @@ RobertSUcks/static/social_uploads/*
 RobertSUcks/build/*
 RobertSUcks/dist/*
 *.pem
+*.spec
