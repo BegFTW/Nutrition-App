@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>NutriLog | Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    .container { max-width: 1100px; margin: 0 auto; padding: 18px; }
+
+    .hero { text-align:center; padding: 18px 10px 8px 10px; }
+    .hero h1 { margin: 0; }
+    .hero p { margin: 8px 0 0 0; color:#666; }
+
+    .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:16px auto; background:#fff; }
+
+    .dash-grid { display:grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .calendar-wrap { border:1px solid #eee; border-radius:14px; overflow:hidden; background:#fff; }
+    .cal-head {
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 12px 14px; border-bottom:1px solid #eee; background:#fafafa;
+      gap: 10px; flex-wrap: wrap;
+    }
+    .cal-title { font-weight: 700; font-size: 18px; }
+    .cal-nav { display:flex; gap: 10px; align-items:center; }
+    .cal-nav a {
+      text-decoration:none; border:1px solid #ddd; background:#fff; color:#222;
+      padding: 8px 10px; border-radius: 10px; display:inline-block;
+    }
+    .cal-nav a:hover { background:#f3f3f3; }
+
+    .cal-grid { width:100%; border-collapse: collapse; table-layout: fixed; }
+    .cal-grid th {
+      background:#fff; padding:10px 6px; font-size: 13px; color:#666;
+      border-bottom:1px solid #eee;
+    }
+    .cal-grid td {
+      height: 108px; vertical-align: top; padding: 10px;
+      border-top:1px solid #f0f0f0; border-right:1px solid #f0f0f0;
+      position: relative;
+      background:#fff;
+    }
+    .cal-grid tr td:last-child { border-right:none; }
+
+    .day-num { font-weight: 700; font-size: 14px; }
+    .muted { color:#999; }
+
+    .outside { background:#fcfcfc; color:#aaa; }
+    .today {
+      outline: 2px solid #333;
+      outline-offset: -2px;
+      border-radius: 10px;
+    }
+
+    .meal-badge {
+      margin-top: 10px;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      border:1px solid #ddd;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background:#fafafa;
+      cursor:pointer;
+      user-select:none;
+      font-size: 13px;
+    }
+    .meal-badge:hover { background:#f0f0f0; }
+
+    .meal-dot {
+      width: 8px; height: 8px; border-radius: 999px; background:#333;
+      display:inline-block;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position:fixed; inset:0;
+      background: rgba(0,0,0,0.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 9999;
+    }
+    .modal {
+      width: min(860px, 100%);
+      background:#fff;
+      border-radius: 16px;
+      border:1px solid #eee;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.2);
+      overflow:hidden;
+    }
+    .modal-head {
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 12px 14px;
+      background:#fafafa;
+      border-bottom: 1px solid #eee;
+      gap: 10px;
+    }
+    .modal-title { font-weight: 800; }
+    .modal-close {
+      border:1px solid #ddd;
+      background:#fff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor:pointer;
+    }
+    .modal-body { padding: 14px; }
+
+    .meal-list { display:flex; flex-direction:column; gap:10px; }
+    .meal-row {
+      border:1px solid #eee;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background:#fff;
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      cursor:pointer;
+    }
+    .meal-row:hover { background:#fafafa; }
+
+    .meal-items { margin-top: 12px; }
+    .meal-item {
+      border:1px solid #eee;
+      border-radius: 12px;
+      padding: 10px;
+      background:#fff;
+      margin-top: 10px;
+    }
+
+    .nutri-grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .nutri-grid div {
+      padding: 6px 8px;
+      border: 1px dashed #eee;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+    .nutri-grid b { display:inline-block; min-width:120px; }
+
+    /* Flash message */
+    .flash { color:#666; }
+
+  </style>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='nutrilog_icon.png') }}" alt="NutriLog">
+      <span>NutriLog</span>
+    </div>
+
+    <ul class="menu">
+      <li>
+        <form action="{{ food_url }}" method="get">
+          <button type="submit" class="nav-btn">Add Food</button>
+        </form>
+      </li>
+      <li>
+        <form action="{{ social_url }}" method="get">
+          <button type="submit" class="nav-btn">Social Media</button>
+        </form>
+      </li>
+
+      <li>
+        <form action="{{ logout_url }}" method="post">
+          <button type="submit" class="nav-btn">Logout</button>
+        </form>
+      </li>
+    </ul>
+  </nav>
+
+  <header class="hero">
+    <h1>Welcome back, {{ first_name }}!</h1>
+    <p>Your personalized nutrition dashboard</p>
+  </header>
+
+  <main class="container">
+
+    {% if session.get("flash_msg") %}
+      <div class="card">
+        <p class="flash">{{ session.get("flash_msg") }}</p>
+      </div>
+      {% set _ = session.pop("flash_msg") %}
+    {% endif %}
+
+    <div class="dash-grid">
+
+      <div class="card">
+        <h2>Dashboard Overview</h2>
+        <p>You are logged in as:</p>
+        <div class="user-badge">
+          <strong>User ID:</strong> {{ user_id }}<br>
+          <strong>Name:</strong> {{ first_name }} {{ last_name }}
+        </div>
+      </div>
+
+      <div class="calendar-wrap">
+        <div class="cal-head">
+          <div class="cal-title">{{ month_name }} {{ year }}</div>
+          <div class="cal-nav">
+            <a href="{{ url_for('home.home', year=prev_y, month=prev_m) }}">&larr; Prev</a>
+            <a href="{{ url_for('home.home') }}">Today</a>
+            <a href="{{ url_for('home.home', year=next_y, month=next_m) }}">Next &rarr;</a>
+          </div>
+        </div>
+
+        <table class="cal-grid">
+          <thead>
+            <tr>
+              <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for week in weeks %}
+              <tr>
+                {% for d in week %}
+                  {% set d_key = d.strftime('%Y-%m-%d') %}
+                  {% set is_outside = (d.month != month) %}
+                  {% set is_today = (d_key == today_key) %}
+                  {% set day_meals = meals_by_day.get(d_key, []) %}
+
+                  <td class="{{ 'outside' if is_outside else '' }} {{ 'today' if is_today else '' }}">
+                    <div class="day-num">
+                      {{ d.day }}
+                      {% if is_outside %}
+                        <span class="muted">({{ d.strftime('%b') }})</span>
+                      {% endif %}
+                    </div>
+
+                    {% if day_meals and (not is_outside) %}
+                      <div class="meal-badge"
+                           onclick="openDay('{{ d_key }}')"
+                           title="Click to view meals">
+                        <span class="meal-dot"></span>
+                        <span><b>{{ day_meals|length }}</b> meal{{ '' if day_meals|length == 1 else 's' }}</span>
+                      </div>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="modalBackdrop" class="modal-backdrop" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation();">
+      <div class="modal-head">
+        <div class="modal-title" id="modalTitle">Meals</div>
+        <button class="modal-close" onclick="hideModal()">Close</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalContent"></div>
+      </div>
+    </div>
+  </div>
+
+ <script>
+  // meals_by_day from Flask
+  const MEALS_BY_DAY = {{ meals_by_day|tojson }};
+
+  const backdrop = document.getElementById("modalBackdrop");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalContent = document.getElementById("modalContent");
+
+  function showModal() {
+    backdrop.style.display = "flex";
+    document.body.style.overflow = "hidden";
+  }
+
+  function hideModal() {
+    backdrop.style.display = "none";
+    modalContent.innerHTML = "";
+    document.body.style.overflow = "";
+  }
+
+  function closeModal(e) {
+    hideModal();
+  }
+
+  function escClose(e) {
+    if (e.key === "Escape") hideModal();
+  }
+  document.addEventListener("keydown", escClose);
+
+  function safe(x) {
+    return (x === null || x === undefined) ? "" : String(x);
+  }
+
+  function toNum(x) {
+    const n = Number(x);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function fmtNum(x, digits=1) {
+    if (x === null || x === undefined || x === "") return "";
+    const n = Number(x);
+    if (Number.isNaN(n)) return "";
+    return n.toFixed(digits);
+  }
+
+  // ---- NEW: totals helpers ----
+  function computeTotalsFromItems(items) {
+    const totals = {
+      calories: 0,
+      protein: 0,
+      carbohydrates: 0,
+      fats: 0,
+      fiber: 0,
+      sugars: 0,
+      sodium: 0,
+      hasAny: false,
+    };
+
+    if (!Array.isArray(items)) return totals;
+
+    for (const it of items) {
+      // if any numeric exists we consider "hasAny"
+      const cals = toNum(it?.calories);
+      const p = toNum(it?.protein);
+      const carbs = toNum(it?.carbohydrates);
+      const f = toNum(it?.fats);
+      const fib = toNum(it?.fiber);
+      const sug = toNum(it?.sugars);
+      const sod = toNum(it?.sodium);
+
+      // detect if this item has any meaningful nutrition fields present
+      const anyPresent =
+        (it && (it.calories != null || it.protein != null || it.carbohydrates != null ||
+               it.fats != null || it.fiber != null || it.sugars != null || it.sodium != null));
+
+      if (anyPresent) totals.hasAny = true;
+
+      totals.calories += cals;
+      totals.protein += p;
+      totals.carbohydrates += carbs;
+      totals.fats += f;
+      totals.fiber += fib;
+      totals.sugars += sug;
+      totals.sodium += sod;
+    }
+
+    return totals;
+  }
+
+  function computeMealTotals(meal) {
+    const items = meal?.meal_items || [];
+    return computeTotalsFromItems(items);
+  }
+
+  function computeDayTotals(meals) {
+    const totals = {
+      calories: 0,
+      protein: 0,
+      carbohydrates: 0,
+      fats: 0,
+      fiber: 0,
+      sugars: 0,
+      sodium: 0,
+      hasAny: false,
+    };
+
+    if (!Array.isArray(meals)) return totals;
+
+    for (const m of meals) {
+      const t = computeMealTotals(m);
+      totals.calories += t.calories;
+      totals.protein += t.protein;
+      totals.carbohydrates += t.carbohydrates;
+      totals.fats += t.fats;
+      totals.fiber += t.fiber;
+      totals.sugars += t.sugars;
+      totals.sodium += t.sodium;
+      if (t.hasAny) totals.hasAny = true;
+    }
+
+    return totals;
+  }
+
+  function renderTotalsCard(title, totals) {
+    // If no nutrition exists in stored items, show a friendly note
+    if (!totals?.hasAny) {
+      return `
+        <div style="border:1px solid #eee; border-radius:14px; padding:12px; background:#fafafa; margin-bottom:12px;">
+          <div style="font-weight:800; margin-bottom:6px;">${safe(title)}</div>
+          <div class="muted">(No nutrition totals available for these saved meals — older meals may not have nutrition fields saved.)</div>
+        </div>
+      `;
+    }
+
+    return `
+      <div style="border:1px solid #eee; border-radius:14px; padding:12px; background:#fafafa; margin-bottom:12px;">
+        <div style="font-weight:800; margin-bottom:8px;">${safe(title)}</div>
+        <div class="nutri-grid">
+          <div><b>Calories</b> ${Math.round(totals.calories)}</div>
+          <div><b>Protein (g)</b> ${fmtNum(totals.protein, 1)}</div>
+          <div><b>Carbs (g)</b> ${fmtNum(totals.carbohydrates, 1)}</div>
+          <div><b>Fats (g)</b> ${fmtNum(totals.fats, 1)}</div>
+          <div><b>Fiber (g)</b> ${fmtNum(totals.fiber, 1)}</div>
+          <div><b>Sugars (g)</b> ${fmtNum(totals.sugars, 1)}</div>
+          <div><b>Sodium (mg)</b> ${Math.round(totals.sodium)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMealItems(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      return `<div class="muted">(No items found in this meal)</div>`;
+    }
+
+    let html = `<div class="meal-items">`;
+    items.forEach((it) => {
+      const label = safe(it.label || it.name || "Item");
+      const grams = (it.grams != null) ? `${it.grams} g` : "";
+
+      const calories = (it.calories != null) ? fmtNum(it.calories, 0) : "";
+      const protein  = (it.protein != null) ? fmtNum(it.protein, 1) : "";
+      const carbs    = (it.carbohydrates != null) ? fmtNum(it.carbohydrates, 1) : "";
+      const fats     = (it.fats != null) ? fmtNum(it.fats, 1) : "";
+      const fiber    = (it.fiber != null) ? fmtNum(it.fiber, 1) : "";
+      const sugars   = (it.sugars != null) ? fmtNum(it.sugars, 1) : "";
+      const sodium   = (it.sodium != null) ? fmtNum(it.sodium, 0) : "";
+
+      html += `
+        <div class="meal-item">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div><b>${label}</b> <span class="muted">${grams ? "— " + grams : ""}</span></div>
+            <div class="muted">${calories ? calories + " cal" : ""}</div>
+          </div>
+
+          <div class="nutri-grid">
+            <div><b>Protein (g)</b> ${protein}</div>
+            <div><b>Carbs (g)</b> ${carbs}</div>
+            <div><b>Fats (g)</b> ${fats}</div>
+            <div><b>Fiber (g)</b> ${fiber}</div>
+            <div><b>Sugars (g)</b> ${sugars}</div>
+            <div><b>Sodium (mg)</b> ${sodium}</div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    return html;
+  }
+
+  // ---- UPDATED: first popup includes DAILY TOTALS + per-meal totals in list ----
+  function openDay(dayKey) {
+    const meals = MEALS_BY_DAY[dayKey] || [];
+    modalTitle.textContent = `Meals on ${dayKey}`;
+
+    if (!meals.length) {
+      modalContent.innerHTML = `<div class="muted">No meals saved for this day.</div>`;
+      showModal();
+      return;
+    }
+
+    const dayTotals = computeDayTotals(meals);
+
+    let html = "";
+    html += renderTotalsCard("Daily Summary (all meals)", dayTotals);
+
+    html += `<div class="meal-list">`;
+    meals.forEach((m, idx) => {
+      const created = safe(m.created_at);
+      const logId = safe(m.log_id);
+
+      const mt = computeMealTotals(m);
+      const mealSummaryLine = mt.hasAny
+        ? `<div class="muted">${Math.round(mt.calories)} cal • P ${fmtNum(mt.protein,1)}g • C ${fmtNum(mt.carbohydrates,1)}g • F ${fmtNum(mt.fats,1)}g</div>`
+        : `<div class="muted">(No nutrition totals stored)</div>`;
+
+      html += `
+        <div class="meal-row" onclick="openMeal('${dayKey}', ${idx})">
+          <div>
+            <div><b>Meal #${logId}</b></div>
+            <div class="muted">${created}</div>
+            ${mealSummaryLine}
+          </div>
+          <div class="muted">Click to view</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    modalContent.innerHTML = html;
+    showModal();
+  }
+
+  // ---- UPDATED: meal popup includes MEAL TOTALS before items ----
+  function openMeal(dayKey, index) {
+    const meals = MEALS_BY_DAY[dayKey] || [];
+    const m = meals[index];
+    if (!m) return;
+
+    const created = safe(m.created_at);
+    const logId = safe(m.log_id);
+
+    modalTitle.textContent = `Meal #${logId} (${dayKey})`;
+
+    const items = m.meal_items || [];
+    const mealTotals = computeTotalsFromItems(items);
+
+    let html = `
+      <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div><b>Saved:</b> ${created}</div>
+        <button class="modal-close" onclick="openDay('${dayKey}')">Back to day</button>
+      </div>
+      <hr style="border:none; border-top:1px solid #eee; margin: 12px 0;">
+    `;
+
+    html += renderTotalsCard("Meal Total", mealTotals);
+    html += renderMealItems(items);
+
+    modalContent.innerHTML = html;
+  }
+</script>
+
+</body>
+</html>

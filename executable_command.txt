@@ -1,0 +1,16 @@
+pyinstaller --onefile --noconsole `
+  --paths . `
+  --hidden-import=login_home `
+  --hidden-import=home `
+  --hidden-import=food_ml `
+  --hidden-import=social_media `
+  --hidden-import=security `
+  --hidden-import=passlib.handlers.pbkdf2 `
+  --collect-all flask `
+  --collect-all passlib `
+  --add-data "templates;templates" `
+  --add-data "static;static" `
+  --add-data "food_model_out;food_model_out" `
+  --add-data "..\fixed_nutrition.csv;." `
+  --add-data "..\nutrition.csv;." `
+  app.py
