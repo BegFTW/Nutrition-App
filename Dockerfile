@@ -6,7 +6,7 @@ ENV PATH ="/opt/venv/bin:$PATH"
 
 RUN pip3 install --upgrade pip
 
-COPY requirements.txt /Nutrition-App
+COPY docker_requirements.txt /Nutrition-App
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip3 install -r docker_requirements.txt
 
