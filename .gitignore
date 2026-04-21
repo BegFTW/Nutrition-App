@@ -1,8 +1,4 @@
 *.pyc
 .env
 RobertSUcks/static/food_uploads/*
-RobertSUcks/static/social_uploads/*
-RobertSUcks/build/*
-RobertSUcks/dist/*
 *.pem
-*.spec

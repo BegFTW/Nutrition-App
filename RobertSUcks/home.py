@@ -10,11 +10,13 @@ home_bp = Blueprint("home", __name__, url_prefix="/home")
 # DB CONFIG (MATCH auth.py)
 # =========================
 DB_CONFIG = {
-    "host": "localhost",
+    "host": "nurilog-db.mysql.database.azure.com",
     "port": 3306,
-    "user": "root",
+    "user": "tylercoleroot",
     "password": "Barker123!",
     "database": "NutriLog",
+    "ssl_ca": "DigiCertGlobalRootG2.crt.pem",
+    "ssl_disabled": False,
 }
 
 def _db_conn():

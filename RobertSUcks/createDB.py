@@ -2,11 +2,14 @@ import mysql.connector
 from security import encrypt_password
 
 def createDatabaseFromFile():
+  # Establish a connection to the MySQL server
     DB_CONFIG = {
-        "host": "localhost",
-        "port": 3306,
-        "user": "root",
-        "password": "Barker123!"
+    "host": "nurilog-db.mysql.database.azure.com",
+    "port": 3306,
+    "user": "tylercoleroot",
+    "password": "Barker123!",
+    "ssl_ca": "DigiCertGlobalRootG2.crt.pem",
+    "ssl_disabled": False,
     }
 
     conn = mysql.connector.connect(**DB_CONFIG)
