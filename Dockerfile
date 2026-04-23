@@ -13,6 +13,5 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY . /Nutrition-App
 
 EXPOSE 5000
-
-ENTRYPOINT ["python3"]
-CMD ["./RobertSUcks/app.py"]
+ENV FLASK_APP=RobertSUcks/app.py
+CMD ["flask", "run", "--host=0.0.0.0"]
