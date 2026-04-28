@@ -8,11 +8,13 @@ from werkzeug.utils import secure_filename
 social_bp = Blueprint("social", __name__, url_prefix="/social")
 
 DB_CONFIG = {
-    "host": "localhost",
+    "host": "nurilog-db.mysql.database.azure.com",
     "port": 3306,
-    "user": "root",
+    "user": "tylercoleroot",
     "password": "Barker123!",
     "database": "NutriLog",
+    "ssl_ca": "DigiCertGlobalRootG2.crt.pem",
+    "ssl_disabled": False,
 }
 
 BASE_DIR = Path(__file__).resolve().parent
