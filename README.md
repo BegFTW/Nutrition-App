@@ -52,6 +52,16 @@ Done (when all are checked):
 - Tested with multiple foods
 - Code pushed to repository
 
+## DevOps
+### The First Way
+Under the first way, we started looking at our system as a whole instead of looking at the individual parts. We wanted to figure out what was impeding both our workflow and the flow of infomation inside the app, and looking at an overall view of the system helped us find those constraints. Upon finding our constraints, we worked to make them as efficient as they could be and maximize the value of our inputs and outputs. We also communicated, to never pass a defect to a downstream center - if a bug was found, we swarmed it and got it fixed immediately. 
+### The Second Way
+The second way is about making things visible and creating feedback loops. With our CI/CD pipelines, we generated constant feedback based on our pushes to GitHub. We wanted to shorten our time for testing and deployment and know what went wrong early. We also gave each other constant feedback throughought the project, pushing each member to be the best they could be.
+### The Third Way
+The third way was probably the easiest for us to implement, as it had been there for the start. Tyler's passion for machine learning and desire to learn more gave us our project idea, and most requirements derived from either customer needs or a group member's desire to learn. This pushed us to greater heights as we all wanted to see this project succeed and learn while doing it. We experimented, took risks, broke things, and learned at every step of the way. 
+
+## Security Features
+In our pursuit of enhanced security, we devoted some time to adding security features to our application. Primarily, this takes the form of password hashing. We use 30,000 rounds of SHA256, with the cipher iterating on itself. We also have basic cloud security functions - a certificate is necessary to access the database in Azure and we use Secrets in GitHub in the deployment pipeline to access Docker.
 ### **When setting up MySQL:
 - Install and configure from https://www.oracle.com/mysql/technologies/mysql-enterprise-edition-downloads.html  (GO TO THE WINDOWS TAB)
   - really only need mysql-commercial folder

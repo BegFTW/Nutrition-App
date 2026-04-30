@@ -8,7 +8,7 @@ def createDatabaseFromFile():
     "port": 3306,
     "user": "tylercoleroot",
     "password": "Barker123!",
-    "ssl_ca": "DigiCertGlobalRootG2.crt.pem",
+    "ssl_ca": "RobertSUcks\DigiCertGlobalRootG2.crt.pem",
     "ssl_disabled": False,
     }
 
